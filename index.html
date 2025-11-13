@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>October 2025 Paid Ads Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .date-selector {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .preset-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .preset-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-value {
+            color: #333;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .card-subtitle {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .card-value {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!--
+    ==========================================
+    METHODOLOGY & DATA SOURCE DOCUMENTATION
+    ==========================================
+
+    Report: October 2025 Paid Ads Analysis
+    Created: November 2025
+
+    DATA SOURCES:
+    - Table: MYBAMBU_PROD.BAMBU_MART_SINGULAR.MART_EVENTS
+    - Time Period: October 1-31, 2025 (EDT timezone)
+    - Timezone Conversion: UTC to America/New_York using CONVERT_TIMEZONE()
+
+    PAID ADS USER DEFINITION:
+    A user is classified as a "Paid Ads User" if they:
+    1. Have a "customer_created" event in the NAME field
+    2. Have one of the following values in their PARTNER field:
+       - Google Sources: "Google Search - UAC", "Google Display - UAC",
+         "Google Display - UACE", "Google Adwords for Video - UAC",
+         "Google Adwords for Video - UACE", "Google Search", "Google Search - UACE"
+       - Apple: "Apple Search Ads"
+       - Meta: "Facebook"
+
+    USER IDENTIFICATION:
+    - Users are identified by DEVICE_ID field
+    - Each unique DEVICE_ID with a customer_created event = 1 user
+
+    PLATFORM CLASSIFICATION:
+    - iOS users: PLATFORM field = "ios"
+    - Android users: PLATFORM field = "android"
+
+    SOURCE GROUPING:
+    - Google: All Google-related partners grouped together
+    - Apple Search Ads: Direct mapping from partner field
+    - Facebook: Direct mapping from partner field (Meta ads)
+
+    REVENUE TRACKING:
+    - Only events with REVENUE > 0 are counted as revenue-generating
+    - Revenue events tracked: crossborder_transaction_submitted,
+      p2p_send_transaction_completed, p2p_request_transaction_completed
+    - Revenue is summed for all qualifying events
+
+    QUERY LOGIC:
+    1. Filter MART_EVENTS for NAME = 'customer_created'
+    2. Apply date filter: DATE(CONVERT_TIMEZONE('America/New_York', ADJUSTED_TIMESTAMP))
+       BETWEEN '2025-10-01' AND '2025-10-31'
+    3. Filter by paid ads partner list
+    4. Group by date, partner, and platform
+    5. Count distinct DEVICE_ID for unique user counts
+    6. For revenue: Join users to their revenue events (REVENUE > 0)
+
+    CALCULATIONS:
+    - Total Users: SUM of all USER_COUNT values across all days/partners/platforms
+    - By Source: Aggregate USER_COUNT grouped by partner category (Google/Apple/Facebook)
+    - By Platform: Aggregate USER_COUNT grouped by PLATFORM field
+    - Daily Trend: USER_COUNT by CREATED_DATE
+    - Revenue: SUM of REVENUE field for all events where REVENUE > 0
+
+    DATA REFRESH:
+    - Data is static and cached in JavaScript dataCache object
+    - To refresh: Re-run Snowflake queries and update dataCache
+
+    NOTES:
+    - Some days may show zero users for certain partner/platform combinations
+    - Google sources dominate the paid ads mix
+    - Revenue tracking only includes post-signup revenue events
+    ==========================================
+    -->
+
+    <div class="container">
+        <header>
+            <h1>October 2025 Paid Ads Analysis</h1>
+            <p class="subtitle">User acquisition performance across Google, Apple Search Ads, and Facebook</p>
+
+            <div class="date-selector">
+                <button class="preset-btn active" onclick="setPreset('full_month')">Full Month</button>
+                <button class="preset-btn" onclick="setPreset('first_half')">First Half (Oct 1-15)</button>
+                <button class="preset-btn" onclick="setPreset('second_half')">Second Half (Oct 16-31)</button>
+                <button class="preset-btn" onclick="setPreset('week1')">Week 1 (Oct 1-7)</button>
+                <button class="preset-btn" onclick="setPreset('week2')">Week 2 (Oct 8-14)</button>
+                <button class="preset-btn" onclick="setPreset('week3')">Week 3 (Oct 15-21)</button>
+                <button class="preset-btn" onclick="setPreset('week4')">Week 4 (Oct 22-31)</button>
+            </div>
+        </header>
+
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-title">Total Paid Ads Users</div>
+                <div class="card-value" id="total-users">0</div>
+                <div class="card-subtitle">Created in October 2025</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Google Ads</div>
+                <div class="card-value" id="google-users">0</div>
+                <div class="card-subtitle">All Google sources</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Apple Search Ads</div>
+                <div class="card-value" id="apple-users">0</div>
+                <div class="card-subtitle">iOS App Store</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Facebook Ads</div>
+                <div class="card-value" id="facebook-users">0</div>
+                <div class="card-subtitle">Meta platforms</div>
+            </div>
+            <div class="card">
+                <div class="card-title">iOS Users</div>
+                <div class="card-value" id="ios-users">0</div>
+                <div class="card-subtitle">Apple devices</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Android Users</div>
+                <div class="card-value" id="android-users">0</div>
+                <div class="card-subtitle">Android devices</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Daily User Acquisition Trend</h2>
+            <canvas id="dailyTrendChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">User Distribution by Ad Source</h2>
+            <canvas id="sourceChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Platform Distribution</h2>
+            <canvas id="platformChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Revenue-Generating Events</h2>
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Data cache with all the Snowflake query results
+        const dataCache = {
+            dailyData: [{"date":"2025-10-01","partner":"Apple Search Ads","platform":"ios","count":101},{"date":"2025-10-01","partner":"Facebook","platform":"android","count":4},{"date":"2025-10-01","partner":"Facebook","platform":"ios","count":1},{"date":"2025-10-01","partner":"Google Adwords for Video - UAC","platform":"android","count":4},{"date":"2025-10-01","partner":"Google Adwords for Video - UAC","platform":"ios","count":1},{"date":"2025-10-01","partner":"Google Adwords for Video - UACE","platform":"android","count":2},{"date":"2025-10-01","partner":"Google Display - UAC","platform":"android","count":46},{"date":"2025-10-01","partner":"Google Display - UACE","platform":"android","count":12},{"date":"2025-10-01","partner":"Google Search","platform":"android","count":3},{"date":"2025-10-01","partner":"Google Search","platform":"ios","count":1},{"date":"2025-10-01","partner":"Google Search - UAC","platform":"android","count":288},{"date":"2025-10-01","partner":"Google Search - UACE","platform":"android","count":4},{"date":"2025-10-02","partner":"Apple Search Ads","platform":"ios","count":77},{"date":"2025-10-02","partner":"Facebook","platform":"android","count":6},{"date":"2025-10-02","partner":"Facebook","platform":"ios","count":1},{"date":"2025-10-02","partner":"Google Adwords for Video - UAC","platform":"android","count":6},{"date":"2025-10-02","partner":"Google Adwords for Video - UAC","platform":"ios","count":1},{"date":"2025-10-02","partner":"Google Adwords for Video - UACE","platform":"android","count":5},{"date":"2025-10-02","partner":"Google Display - UAC","platform":"android","count":57},{"date":"2025-10-02","partner":"Google Display - UACE","platform":"android","count":15},{"date":"2025-10-02","partner":"Google Search","platform":"android","count":2},{"date":"2025-10-02","partner":"Google Search","platform":"ios","count":1},{"date":"2025-10-02","partner":"Google Search - UAC","platform":"android","count":334},{"date":"2025-10-03","partner":"Apple Search Ads","platform":"ios","count":66},{"date":"2025-10-03","partner":"Facebook","platform":"android","count":2},{"date":"2025-10-03","partner":"Facebook","platform":"ios","count":1},{"date":"2025-10-03","partner":"Google Adwords for Video - UAC","platform":"android","count":3},{"date":"2025-10-03","partner":"Google Adwords for Video - UAC","platform":"ios","count":1},{"date":"2025-10-03","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-03","partner":"Google Display - UAC","platform":"android","count":33},{"date":"2025-10-03","partner":"Google Display - UACE","platform":"android","count":12},{"date":"2025-10-03","partner":"Google Search - UAC","platform":"android","count":312},{"date":"2025-10-04","partner":"Apple Search Ads","platform":"ios","count":85},{"date":"2025-10-04","partner":"Facebook","platform":"android","count":3},{"date":"2025-10-04","partner":"Google Adwords for Video - UAC","platform":"android","count":8},{"date":"2025-10-04","partner":"Google Adwords for Video - UACE","platform":"android","count":6},{"date":"2025-10-04","partner":"Google Display - UAC","platform":"android","count":58},{"date":"2025-10-04","partner":"Google Display - UACE","platform":"android","count":13},{"date":"2025-10-04","partner":"Google Search - UAC","platform":"android","count":287},{"date":"2025-10-04","partner":"Google Search - UACE","platform":"android","count":1},{"date":"2025-10-05","partner":"Apple Search Ads","platform":"ios","count":67},{"date":"2025-10-05","partner":"Facebook","platform":"android","count":4},{"date":"2025-10-05","partner":"Facebook","platform":"ios","count":1},{"date":"2025-10-05","partner":"Google Adwords for Video - UAC","platform":"android","count":2},{"date":"2025-10-05","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-05","partner":"Google Display - UAC","platform":"android","count":58},{"date":"2025-10-05","partner":"Google Display - UACE","platform":"android","count":16},{"date":"2025-10-05","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-05","partner":"Google Search - UAC","platform":"android","count":311},{"date":"2025-10-06","partner":"Apple Search Ads","platform":"ios","count":77},{"date":"2025-10-06","partner":"Facebook","platform":"android","count":4},{"date":"2025-10-06","partner":"Facebook","platform":"ios","count":2},{"date":"2025-10-06","partner":"Google Adwords for Video - UAC","platform":"android","count":2},{"date":"2025-10-06","partner":"Google Adwords for Video - UACE","platform":"android","count":4},{"date":"2025-10-06","partner":"Google Display - UAC","platform":"android","count":53},{"date":"2025-10-06","partner":"Google Display - UACE","platform":"android","count":16},{"date":"2025-10-06","partner":"Google Search","platform":"android","count":3},{"date":"2025-10-06","partner":"Google Search - UAC","platform":"android","count":284},{"date":"2025-10-06","partner":"Google Search - UACE","platform":"android","count":2},{"date":"2025-10-07","partner":"Apple Search Ads","platform":"ios","count":57},{"date":"2025-10-07","partner":"Facebook","platform":"android","count":4},{"date":"2025-10-07","partner":"Facebook","platform":"ios","count":1},{"date":"2025-10-07","partner":"Google Adwords for Video - UAC","platform":"android","count":3},{"date":"2025-10-07","partner":"Google Adwords for Video - UACE","platform":"android","count":3},{"date":"2025-10-07","partner":"Google Display - UAC","platform":"android","count":49},{"date":"2025-10-07","partner":"Google Display - UACE","platform":"android","count":13},{"date":"2025-10-07","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-07","partner":"Google Search - UAC","platform":"android","count":263},{"date":"2025-10-07","partner":"Google Search - UACE","platform":"android","count":3},{"date":"2025-10-08","partner":"Apple Search Ads","platform":"ios","count":39},{"date":"2025-10-08","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-08","partner":"Facebook","platform":"ios","count":1},{"date":"2025-10-08","partner":"Google Adwords for Video - UAC","platform":"ios","count":3},{"date":"2025-10-08","partner":"Google Adwords for Video - UACE","platform":"android","count":4},{"date":"2025-10-08","partner":"Google Display - UAC","platform":"android","count":22},{"date":"2025-10-08","partner":"Google Display - UACE","platform":"android","count":11},{"date":"2025-10-08","partner":"Google Search - UAC","platform":"android","count":80},{"date":"2025-10-08","partner":"Google Search - UACE","platform":"android","count":3},{"date":"2025-10-09","partner":"Apple Search Ads","platform":"ios","count":13},{"date":"2025-10-09","partner":"Facebook","platform":"android","count":2},{"date":"2025-10-09","partner":"Facebook","platform":"ios","count":1},{"date":"2025-10-09","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-09","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-09","partner":"Google Display - UAC","platform":"android","count":14},{"date":"2025-10-09","partner":"Google Display - UACE","platform":"android","count":7},{"date":"2025-10-09","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-09","partner":"Google Search - UAC","platform":"android","count":65},{"date":"2025-10-10","partner":"Apple Search Ads","platform":"ios","count":10},{"date":"2025-10-10","partner":"Facebook","platform":"android","count":2},{"date":"2025-10-10","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-10","partner":"Google Display - UAC","platform":"android","count":16},{"date":"2025-10-10","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-10","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-10","partner":"Google Search - UAC","platform":"android","count":55},{"date":"2025-10-11","partner":"Apple Search Ads","platform":"ios","count":3},{"date":"2025-10-11","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-11","partner":"Google Adwords for Video - UACE","platform":"android","count":5},{"date":"2025-10-11","partner":"Google Display - UAC","platform":"android","count":17},{"date":"2025-10-11","partner":"Google Display - UACE","platform":"android","count":4},{"date":"2025-10-11","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-11","partner":"Google Search - UAC","platform":"android","count":46},{"date":"2025-10-12","partner":"Apple Search Ads","platform":"ios","count":9},{"date":"2025-10-12","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-12","partner":"Google Adwords for Video - UAC","platform":"android","count":2},{"date":"2025-10-12","partner":"Google Adwords for Video - UAC","platform":"ios","count":1},{"date":"2025-10-12","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-12","partner":"Google Display - UAC","platform":"android","count":26},{"date":"2025-10-12","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-12","partner":"Google Search - UAC","platform":"android","count":41},{"date":"2025-10-13","partner":"Apple Search Ads","platform":"ios","count":6},{"date":"2025-10-13","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-13","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-13","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-13","partner":"Google Display - UAC","platform":"android","count":24},{"date":"2025-10-13","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-13","partner":"Google Search - UAC","platform":"android","count":50},{"date":"2025-10-14","partner":"Apple Search Ads","platform":"ios","count":14},{"date":"2025-10-14","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-14","partner":"Google Display - UAC","platform":"android","count":20},{"date":"2025-10-14","partner":"Google Display - UACE","platform":"android","count":4},{"date":"2025-10-14","partner":"Google Search - UAC","platform":"android","count":58},{"date":"2025-10-15","partner":"Apple Search Ads","platform":"ios","count":9},{"date":"2025-10-15","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-15","partner":"Google Display - UAC","platform":"android","count":21},{"date":"2025-10-15","partner":"Google Display - UACE","platform":"android","count":2},{"date":"2025-10-15","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-15","partner":"Google Search - UAC","platform":"android","count":36},{"date":"2025-10-16","partner":"Apple Search Ads","platform":"ios","count":7},{"date":"2025-10-16","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-16","partner":"Google Display - UAC","platform":"android","count":6},{"date":"2025-10-16","partner":"Google Display - UACE","platform":"android","count":9},{"date":"2025-10-16","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-16","partner":"Google Search - UAC","platform":"android","count":14},{"date":"2025-10-17","partner":"Apple Search Ads","platform":"ios","count":7},{"date":"2025-10-17","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-17","partner":"Google Adwords for Video - UACE","platform":"android","count":3},{"date":"2025-10-17","partner":"Google Display - UAC","platform":"android","count":4},{"date":"2025-10-17","partner":"Google Display - UACE","platform":"android","count":6},{"date":"2025-10-17","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-17","partner":"Google Search - UAC","platform":"android","count":16},{"date":"2025-10-17","partner":"Google Search - UACE","platform":"android","count":1},{"date":"2025-10-18","partner":"Apple Search Ads","platform":"ios","count":4},{"date":"2025-10-18","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-18","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-18","partner":"Google Display - UAC","platform":"android","count":5},{"date":"2025-10-18","partner":"Google Display - UACE","platform":"android","count":4},{"date":"2025-10-18","partner":"Google Search","platform":"android","count":1},{"date":"2025-10-18","partner":"Google Search - UAC","platform":"android","count":9},{"date":"2025-10-19","partner":"Apple Search Ads","platform":"ios","count":6},{"date":"2025-10-19","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-19","partner":"Google Display - UAC","platform":"android","count":7},{"date":"2025-10-19","partner":"Google Display - UACE","platform":"android","count":2},{"date":"2025-10-19","partner":"Google Search - UAC","platform":"android","count":6},{"date":"2025-10-20","partner":"Apple Search Ads","platform":"ios","count":6},{"date":"2025-10-20","partner":"Google Adwords for Video - UACE","platform":"android","count":2},{"date":"2025-10-20","partner":"Google Display - UAC","platform":"android","count":1},{"date":"2025-10-20","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-20","partner":"Google Search - UAC","platform":"android","count":10},{"date":"2025-10-20","partner":"Google Search - UACE","platform":"android","count":1},{"date":"2025-10-21","partner":"Apple Search Ads","platform":"ios","count":4},{"date":"2025-10-21","partner":"Google Display - UAC","platform":"android","count":9},{"date":"2025-10-21","partner":"Google Display - UACE","platform":"android","count":1},{"date":"2025-10-21","partner":"Google Search - UAC","platform":"android","count":10},{"date":"2025-10-22","partner":"Apple Search Ads","platform":"ios","count":2},{"date":"2025-10-22","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-22","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-22","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-22","partner":"Google Search - UAC","platform":"android","count":7},{"date":"2025-10-23","partner":"Apple Search Ads","platform":"ios","count":3},{"date":"2025-10-23","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-23","partner":"Google Adwords for Video - UAC","platform":"ios","count":2},{"date":"2025-10-23","partner":"Google Display - UAC","platform":"android","count":5},{"date":"2025-10-23","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-23","partner":"Google Search - UAC","platform":"android","count":7},{"date":"2025-10-24","partner":"Apple Search Ads","platform":"ios","count":5},{"date":"2025-10-24","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-24","partner":"Google Display - UAC","platform":"android","count":3},{"date":"2025-10-24","partner":"Google Display - UACE","platform":"android","count":5},{"date":"2025-10-24","partner":"Google Search - UAC","platform":"android","count":2},{"date":"2025-10-25","partner":"Apple Search Ads","platform":"ios","count":5},{"date":"2025-10-25","partner":"Google Adwords for Video - UAC","platform":"android","count":2},{"date":"2025-10-25","partner":"Google Display - UAC","platform":"android","count":4},{"date":"2025-10-25","partner":"Google Display - UACE","platform":"android","count":1},{"date":"2025-10-25","partner":"Google Search - UAC","platform":"android","count":5},{"date":"2025-10-26","partner":"Apple Search Ads","platform":"ios","count":1},{"date":"2025-10-26","partner":"Google Adwords for Video - UAC","platform":"ios","count":1},{"date":"2025-10-26","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-26","partner":"Google Display - UAC","platform":"android","count":3},{"date":"2025-10-26","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-26","partner":"Google Search - UAC","platform":"android","count":4},{"date":"2025-10-27","partner":"Apple Search Ads","platform":"ios","count":4},{"date":"2025-10-27","partner":"Google Adwords for Video - UAC","platform":"android","count":1},{"date":"2025-10-27","partner":"Google Display - UAC","platform":"android","count":2},{"date":"2025-10-27","partner":"Google Search - UAC","platform":"android","count":8},{"date":"2025-10-28","partner":"Apple Search Ads","platform":"ios","count":1},{"date":"2025-10-28","partner":"Google Adwords for Video - UACE","platform":"android","count":2},{"date":"2025-10-28","partner":"Google Display - UAC","platform":"android","count":1},{"date":"2025-10-28","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-28","partner":"Google Search - UAC","platform":"android","count":5},{"date":"2025-10-29","partner":"Apple Search Ads","platform":"ios","count":3},{"date":"2025-10-29","partner":"Google Adwords for Video - UACE","platform":"android","count":1},{"date":"2025-10-29","partner":"Google Display - UAC","platform":"android","count":1},{"date":"2025-10-29","partner":"Google Search - UAC","platform":"android","count":4},{"date":"2025-10-29","partner":"Google Search - UACE","platform":"android","count":1},{"date":"2025-10-30","partner":"Apple Search Ads","platform":"ios","count":3},{"date":"2025-10-30","partner":"Facebook","platform":"android","count":1},{"date":"2025-10-30","partner":"Google Display - UAC","platform":"android","count":3},{"date":"2025-10-30","partner":"Google Display - UACE","platform":"android","count":3},{"date":"2025-10-30","partner":"Google Search - UAC","platform":"android","count":5},{"date":"2025-10-31","partner":"Apple Search Ads","platform":"ios","count":4},{"date":"2025-10-31","partner":"Google Display - UAC","platform":"android","count":1},{"date":"2025-10-31","partner":"Google Display - UACE","platform":"android","count":1},{"date":"2025-10-31","partner":"Google Search - UAC","platform":"android","count":3}],
+
+            revenueEvents: [
+                {"event": "Crossborder Transaction", "users": 111, "count": 349, "revenue": 74861.40},
+                {"event": "P2P Send", "users": 67, "count": 182, "revenue": 20161.54},
+                {"event": "P2P Request", "users": 13, "count": 20, "revenue": 3755.00}
+            ]
+        };
+
+        let currentPreset = 'full_month';
+        let charts = {};
+
+        // Define date ranges for presets
+        const dateRanges = {
+            'full_month': {start: '2025-10-01', end: '2025-10-31'},
+            'first_half': {start: '2025-10-01', end: '2025-10-15'},
+            'second_half': {start: '2025-10-16', end: '2025-10-31'},
+            'week1': {start: '2025-10-01', end: '2025-10-07'},
+            'week2': {start: '2025-10-08', end: '2025-10-14'},
+            'week3': {start: '2025-10-15', end: '2025-10-21'},
+            'week4': {start: '2025-10-22', end: '2025-10-31'}
+        };
+
+        function setPreset(presetName) {
+            currentPreset = presetName;
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateData();
+        }
+
+        function filterDataByDateRange(data, range) {
+            return data.filter(item => {
+                return item.date >= range.start && item.date <= range.end;
+            });
+        }
+
+        function categorizePartner(partner) {
+            if (partner === 'Apple Search Ads') return 'Apple Search Ads';
+            if (partner === 'Facebook') return 'Facebook';
+            // All Google variants
+            return 'Google';
+        }
+
+        function updateData() {
+            const range = dateRanges[currentPreset];
+            const filteredData = filterDataByDateRange(dataCache.dailyData, range);
+
+            // Calculate summary metrics
+            let totalUsers = 0;
+            let googleUsers = 0;
+            let appleUsers = 0;
+            let facebookUsers = 0;
+            let iosUsers = 0;
+            let androidUsers = 0;
+
+            filteredData.forEach(item => {
+                totalUsers += item.count;
+
+                const category = categorizePartner(item.partner);
+                if (category === 'Google') googleUsers += item.count;
+                else if (category === 'Apple Search Ads') appleUsers += item.count;
+                else if (category === 'Facebook') facebookUsers += item.count;
+
+                if (item.platform === 'ios') iosUsers += item.count;
+                else if (item.platform === 'android') androidUsers += item.count;
+            });
+
+            // Update summary cards
+            document.getElementById('total-users').textContent = totalUsers.toLocaleString();
+            document.getElementById('google-users').textContent = googleUsers.toLocaleString();
+            document.getElementById('apple-users').textContent = appleUsers.toLocaleString();
+            document.getElementById('facebook-users').textContent = facebookUsers.toLocaleString();
+            document.getElementById('ios-users').textContent = iosUsers.toLocaleString();
+            document.getElementById('android-users').textContent = androidUsers.toLocaleString();
+
+            // Prepare daily trend data
+            const dailyTotals = {};
+            filteredData.forEach(item => {
+                if (!dailyTotals[item.date]) dailyTotals[item.date] = 0;
+                dailyTotals[item.date] += item.count;
+            });
+
+            const dates = Object.keys(dailyTotals).sort();
+            const counts = dates.map(date => dailyTotals[date]);
+
+            // Update charts
+            updateDailyTrendChart(dates, counts);
+            updateSourceChart(googleUsers, appleUsers, facebookUsers);
+            updatePlatformChart(iosUsers, androidUsers);
+            updateRevenueChart();
+        }
+
+        function updateDailyTrendChart(dates, counts) {
+            const ctx = document.getElementById('dailyTrendChart').getContext('2d');
+
+            if (charts.dailyTrend) charts.dailyTrend.destroy();
+
+            charts.dailyTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates.map(d => {
+                        const date = new Date(d + 'T00:00:00');
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }),
+                    datasets: [{
+                        label: 'Users Acquired',
+                        data: counts,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSourceChart(google, apple, facebook) {
+            const ctx = document.getElementById('sourceChart').getContext('2d');
+
+            if (charts.source) charts.source.destroy();
+
+            charts.source = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Google Ads', 'Apple Search Ads', 'Facebook Ads'],
+                    datasets: [{
+                        data: [google, apple, facebook],
+                        backgroundColor: [
+                            '#4285F4',
+                            '#000000',
+                            '#1877F2'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePlatformChart(ios, android) {
+            const ctx = document.getElementById('platformChart').getContext('2d');
+
+            if (charts.platform) charts.platform.destroy();
+
+            charts.platform = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['iOS', 'Android'],
+                    datasets: [{
+                        data: [ios, android],
+                        backgroundColor: [
+                            '#999999',
+                            '#3DDC84'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRevenueChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+
+            if (charts.revenue) charts.revenue.destroy();
+
+            charts.revenue = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dataCache.revenueEvents.map(e => e.event),
+                    datasets: [
+                        {
+                            label: 'Unique Users',
+                            data: dataCache.revenueEvents.map(e => e.users),
+                            backgroundColor: '#667eea',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Total Revenue ($)',
+                            data: dataCache.revenueEvents.map(e => e.revenue),
+                            backgroundColor: '#764ba2',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Users'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Revenue ($)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize with full month view
+        updateData();
+    </script>
+</body>
+</html>

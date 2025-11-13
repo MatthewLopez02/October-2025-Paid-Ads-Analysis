@@ -132,6 +132,76 @@
             max-height: 400px;
         }
 
+        .insights-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .insights-title {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .insight-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .insight-item h3 {
+            color: #667eea;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .insight-item p {
+            color: #555;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .campaign-note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .campaign-note strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .campaign-note p {
+            color: #78350f;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: #1f2937;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 30px;
+            border-radius: 15px;
+        }
+
+        .footer p {
+            opacity: 0.8;
+            font-size: 0.875rem;
+            margin: 5px 0;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.8em;
@@ -227,6 +297,13 @@
                 <button class="preset-btn" onclick="setPreset('week3')">Week 3 (Oct 15-21)</button>
                 <button class="preset-btn" onclick="setPreset('week4')">Week 4 (Oct 22-31)</button>
             </div>
+
+            <div class="campaign-note">
+                <strong>⚠️ Campaign Status Note</strong>
+                <p><strong>October 8th:</strong> Apple Search Ads and Meta (Facebook) campaigns were turned off.</p>
+                <p><strong>October 15th:</strong> All Google campaigns were turned off.</p>
+                <p>No active paid ad campaigns ran from October 16-31. Any user acquisitions after these dates represent residual conversions from earlier ad exposures.</p>
+            </div>
         </header>
 
         <div class="summary-cards">
@@ -281,6 +358,50 @@
             <h2 class="chart-title">Revenue-Generating Events</h2>
             <canvas id="revenueChart"></canvas>
         </div>
+
+        <div class="insights-section">
+            <h2 class="insights-title">Key Insights</h2>
+
+            <div class="insight-item">
+                <h3>Google Ads Dominated User Acquisition (86%)</h3>
+                <p>Google campaigns were by far the most effective channel, driving 4,056 of 4,717 total users (86%). Google Search - UAC campaigns alone contributed 3,468 users, representing 73.5% of all paid ads acquisitions. This demonstrates Google's strong performance in reaching and converting MyBambu's target audience.</p>
+            </div>
+
+            <div class="insight-item">
+                <h3>Sharp Decline After Campaign Shutoff</h3>
+                <p>The daily trend chart shows a dramatic drop in user acquisition after October 8th when Apple Search Ads and Meta campaigns were paused (from ~400-500 daily users to ~100-160), and an even steeper decline after October 15th when Google campaigns were turned off (dropping to single digits daily). This indicates minimal organic carryover effect and suggests users convert relatively quickly after ad exposure.</p>
+            </div>
+
+            <div class="insight-item">
+                <h3>Android Platform Preference (73%)</h3>
+                <p>Android users made up 73% of all paid ads acquisitions (3,452 users) compared to 27% iOS (1,265 users). This platform skew is likely driven by Google's dominance in the channel mix, as Google Ads campaigns heavily favor Android. The Apple Search Ads channel (iOS-only) contributed just 13% of total volume.</p>
+            </div>
+
+            <div class="insight-item">
+                <h3>Apple Search Ads Showed Solid Performance</h3>
+                <p>Despite representing only 13% of total users, Apple Search Ads maintained consistent daily acquisition rates (averaging 30-80 users per day) during its active period (Oct 1-7). The cost-effectiveness and quality of these iOS users should be evaluated to determine if this channel warrants reactivation.</p>
+            </div>
+
+            <div class="insight-item">
+                <h3>Limited Meta/Facebook Impact</h3>
+                <p>Facebook ads contributed only 42 users (less than 1% of total), suggesting either poor campaign performance, limited budget allocation, or audience targeting challenges on the platform. This channel may need significant optimization or could be deprioritized in future campaigns.</p>
+            </div>
+
+            <div class="insight-item">
+                <h3>Strong Revenue Engagement from Paid Users</h3>
+                <p>Of the 4,717 paid ads users acquired in October, 111 users (2.4%) generated revenue through cross-border transactions totaling $74,861, and 67 users (1.4%) sent P2P transactions totaling $20,162. This demonstrates that paid ads users do convert to revenue-generating actions, though the conversion rate and time-to-revenue metrics should be tracked for better ROI analysis.</p>
+            </div>
+
+            <div class="insight-item">
+                <h3>Week 1 Was Peak Performance</h3>
+                <p>The first week of October (Oct 1-7) accounted for approximately 3,300 users, representing 70% of the entire month's paid ads acquisitions. This front-loaded performance suggests campaigns were optimized and running at full capacity early in the month before being scaled down or paused.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Data Source: MYBAMBU_PROD.BAMBU_MART_SINGULAR.MART_EVENTS</p>
+        <p>MyBambu Paid Ads Team</p>
     </div>
 
     <script>
